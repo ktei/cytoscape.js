@@ -41,7 +41,9 @@ var paths = {
     'src/heap.js',
     'src/extensions/renderer.canvas.define-and-init-etc.js',
     'src/extensions/renderer.canvas.*.js',
-    'src/extensions/*.js'
+    // 'src/extensions/*.js'
+    'src/extensions/renderer.null.js',
+    'src/extensions/layout.preset.js'
   ],
 
   docs: {

@@ -65,7 +65,7 @@
     
     draw: function(context, size, angle, translation) {
       var points = arrowShapes['arrow']._points;
-    
+      size = 10; // reveal - to reduce the ridiculous size of triangle arrow
       for (var i = 0; i < points.length / 2; i++) {
         var pt = transform( points[i * 2], points[i * 2 + 1], size, angle, translation );
 
@@ -101,6 +101,7 @@
     
     draw: function(context, size, angle, translation) {
       var points = arrowShapes['triangle']._points;
+      
       var firstPt;
     
       for (var i = 0; i < points.length / 2; i++) {
