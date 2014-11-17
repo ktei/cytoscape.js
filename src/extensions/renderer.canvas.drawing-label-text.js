@@ -27,7 +27,13 @@
     // this.recalculateEdgeLabelProjection( edge );
     
     var rs = edge._private.rscratch;
-    this.drawText(context, edge, rs.labelX, rs.labelY);
+    context.save();
+      //context.rotate(-Math.PI / 2);
+      context.translate(rs.labelX, rs.labelY);
+    //context.translate(0, 300);
+    context.rotate(-Math.PI / 2);
+    this.drawText(context, edge, 0, 0);//rs.labelX, rs.labelY);
+    context.restore();
   };
 
   // Draw node text
