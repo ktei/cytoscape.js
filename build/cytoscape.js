@@ -1,5 +1,5 @@
 /*!
- * This file is part of Cytoscape.js snapshot-496a594c35-1416182870667.
+ * This file is part of Cytoscape.js snapshot-907351e3e3-1416347556470.
  * 
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -29,7 +29,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = 'snapshot-496a594c35-1416182870667';
+  $$.version = 'snapshot-907351e3e3-1416347556470';
   
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -3582,7 +3582,7 @@ var cytoscape;
         // override pan w/ center if set
         var center = properties.center || properties.centre;
         if( center && isCore ){
-          var centerPan = cy.getCenterPan( center.eles );
+          var centerPan = cy.getCenterPan( center.eles, properties.zoom );
 
           if( centerPan ){
             properties.pan = centerPan;
@@ -8086,7 +8086,7 @@ var cytoscape;
       return this; // chaining
     },
 
-    getCenterPan: function( elements ){
+    getCenterPan: function( elements, zoom ){
       if( !this._private.panningEnabled ){
         return;
       }
@@ -8101,7 +8101,7 @@ var cytoscape;
       var bb = elements.boundingBox();
       var w = this.width();
       var h = this.height();
-      var zoom = this._private.zoom;
+      zoom = zoom === undefined ? this._private.zoom : zoom;
 
       var pan = { // middle
         x: (w - zoom*( bb.x1 + bb.x2 ))/2,
@@ -16041,6 +16041,7 @@ var cytoscape;
     var labelFamily = style['font-family'].strValue;
     var labelWeight = style['font-weight'].strValue;
     var opacity = style['text-opacity'].value * style['opacity'].value * parentOpacity;
+    var outlineOpacity = style['text-outline-opacity'].value * opacity;
     var color = style['color'].value;
     var outlineColor = style['text-outline-color'].value;
 
@@ -16070,7 +16071,7 @@ var cytoscape;
 
     this.fillStyle(context, color[0], color[1], color[2], opacity);
     
-    this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], opacity);
+    this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
 
     return text;
   };
