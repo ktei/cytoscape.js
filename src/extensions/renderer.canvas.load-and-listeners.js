@@ -337,6 +337,9 @@
           r.hoverData.downTime = (new Date()).getTime();
 
         }
+
+
+                
       
         // Selection box
         if ( near == null || near.isEdge() ) {
@@ -371,6 +374,31 @@
             r.redraw();
           }
           
+        }
+
+        var down = r.hoverData.down;
+        if (near == down && !r.dragData.didDrag) {
+          if (near != null && near._private.selectable) {
+            var shiftDown = e.shiftKey;
+            var selectedNodes = cy.$(function(){ return this.isNode() && this.selected(); });
+            if( r.hoverData.dragging ){
+              // if panning, don't change selection state
+            } else if( cy.selectionType() === 'additive' || shiftDown ){
+              if( near.selected()) {
+                near.unselect();
+              } else {
+                near.select();
+              }
+            } else if (selectedNodes.length > 1 && selectedNodes.filter('#' + near.id()).length > 0) {
+              // if we are panning the selected nodes, don't change selection state
+            } else {
+              if( !shiftDown ){
+                cy.$(':selected').not( near ).unselect();
+                near.select();
+              }   
+            }
+            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+          }
         }
       
       } 
@@ -790,11 +818,11 @@
             if( r.hoverData.dragging ){
               // if panning, don't change selection state
             } else if( cy.selectionType() === 'additive' || shiftDown ){
-              if( near.selected() ){
-                near.unselect();
-              } else {
-                near.select();
-              }
+              // if( near.selected() ){
+              //   near.unselect();
+              // } else {
+              //   near.select();
+              // }
             } else {
               if( !shiftDown ){
                 cy.$(':selected').not( near ).unselect();
