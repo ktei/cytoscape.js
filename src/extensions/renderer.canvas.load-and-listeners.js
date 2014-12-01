@@ -823,7 +823,6 @@
               // }
             } else {
               if( !shiftDown ){
-                console.log('unselect');
                 cy.$(':selected').not( near ).unselect();
                 near.select();
               }               
