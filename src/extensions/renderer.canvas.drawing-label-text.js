@@ -27,13 +27,33 @@
     // this.recalculateEdgeLabelProjection( edge );
     
     var rs = edge._private.rscratch;
-    context.save();
-      //context.rotate(-Math.PI / 2);
+    var style = edge._private.style;
+    var autorotate = style['edge-text-rotation'].strValue === 'autorotate';
+    var theta, dx, dy;
+    
+    if( autorotate ){
+      switch( rs.edgeType ){
+        case 'haystack':
+          dx = rs.haystackPts[2] - rs.haystackPts[0];
+          dy = rs.haystackPts[3] - rs.haystackPts[1];
+          break;
+        default:
+          dx = rs.endX - rs.startX;
+          dy = rs.endY - rs.startY;
+      }
+
+      theta = Math.atan( dy / dx );
+
       context.translate(rs.labelX, rs.labelY);
-    //context.translate(0, 300);
-    context.rotate(-Math.PI / 2);
-    this.drawText(context, edge, 0, 0);//rs.labelX, rs.labelY);
-    context.restore();
+      context.rotate(theta);
+
+      this.drawText(context, edge, 0, 0);
+
+      context.rotate(-theta);
+      context.translate(-rs.labelX, -rs.labelY);
+    } else {
+      this.drawText(context, edge, rs.labelX, rs.labelY);
+    }
   };
 
   // Draw node text
@@ -118,6 +138,7 @@
     var labelFamily = style['font-family'].strValue;
     var labelWeight = style['font-weight'].strValue;
     var opacity = style['text-opacity'].value * style['opacity'].value * parentOpacity;
+    var outlineOpacity = style['text-outline-opacity'].value * opacity;
     var color = style['color'].value;
     var outlineColor = style['text-outline-color'].value;
 
@@ -147,7 +168,7 @@
 
     this.fillStyle(context, color[0], color[1], color[2], opacity);
     
-    this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], opacity);
+    this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
 
     return text;
   };
