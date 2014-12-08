@@ -26,7 +26,10 @@
     
     // this.recalculateEdgeLabelProjection( edge );
     
-    var rs = edge._private.rscratch;
+    var rs = edge._private.rscratch; 
+    
+    if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
+
     var style = edge._private.style;
     var autorotate = style['edge-text-rotation'].strValue === 'autorotate';
     var theta, dx, dy;
@@ -76,6 +79,8 @@
     var textHalign = node._private.style['text-halign'].strValue;
     var textValign = node._private.style['text-valign'].strValue;
     var rs = node._private.rscratch;
+
+    if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
 
     switch( textHalign ){
       case 'left':
