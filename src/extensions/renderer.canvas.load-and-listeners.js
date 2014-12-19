@@ -441,6 +441,8 @@
       }
 
       var cy = r.data.cy;
+      var zoom = cy.zoom();
+      var pan = cy.pan();
       var pos = r.projectIntoViewport(e.clientX, e.clientY);
       var select = r.data.select;
       
@@ -598,46 +600,79 @@
           r.hoverData.last = near;
         }
         
-        if ( down && down.isNode() && r.nodeIsDraggable(down) ) {
-          if( !r.dragData.didDrag ) {
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
-          }
+        var dx = select[2] - select[0];
+        var dx2 = dx * dx;
+        var dy = select[3] - select[1];
+        var dy2 = dy * dy;
+        var dist2 = dx2 + dy2;
+        var rdist2 = dist2 * zoom * zoom;
 
-          r.dragData.didDrag = true; // indicate that we actually did drag the node
+        if( down && down.isNode() && r.nodeIsDraggable(down) ){
 
-          var toTrigger = [];
+          if( rdist2 >= r.tapThreshold2 ){ // then drag
 
-          for( var i = 0; i < draggedElements.length; i++ ){
-            var dEle = draggedElements[i];
+            var justStartedDrag = !r.dragData.didDrag;
 
-            // now, add the elements to the drag layer if not done already
-            if( !r.hoverData.draggingEles ){ 
-              addNodeToDrag( dEle, { inDragLayer: true } );
+            if( justStartedDrag ) {
+              r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
             }
 
-            // Locked nodes not draggable, as well as non-visible nodes
-            if( dEle.isNode() && r.nodeIsDraggable(dEle) && dEle.grabbed() ){
-              var dPos = dEle._private.position;
+            r.dragData.didDrag = true; // indicate that we actually did drag the node
 
-              toTrigger.push( dEle );
-              
-              if( $$.is.number(disp[0]) && $$.is.number(disp[1]) ){
-                dPos.x += disp[0];
-                dPos.y += disp[1];
+            var toTrigger = [];
+
+            for( var i = 0; i < draggedElements.length; i++ ){
+              var dEle = draggedElements[i];
+
+              // now, add the elements to the drag layer if not done already
+              if( !r.hoverData.draggingEles ){ 
+                addNodeToDrag( dEle, { inDragLayer: true } );
               }
 
+              // Locked nodes not draggable, as well as non-visible nodes
+              if( dEle.isNode() && r.nodeIsDraggable(dEle) && dEle.grabbed() ){
+                var dPos = dEle._private.position;
+
+                toTrigger.push( dEle );
+                
+                if( $$.is.number(disp[0]) && $$.is.number(disp[1]) ){
+                  dPos.x += disp[0];
+                  dPos.y += disp[1];
+
+                  if( justStartedDrag ){
+                    var dragDelta = r.hoverData.dragDelta;
+
+                    if( $$.is.number(dragDelta[0]) && $$.is.number(dragDelta[1]) ){
+                      dPos.x += dragDelta[0];
+                      dPos.y += dragDelta[1];
+                    }
+                  }
+                }
+
+              }
+            }
+
+            r.hoverData.draggingEles = true;
+            
+            var tcol = (new $$.Collection(cy, toTrigger));
+
+            tcol.updateCompoundBounds();
+            tcol.trigger('position drag');
+            
+            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+            r.redraw();
+
+          } else { // otherwise save drag delta for when we actually start dragging so the relative grab pos is constant
+            var dragDelta = r.hoverData.dragDelta = r.hoverData.dragDelta || [];
+
+            if( dragDelta.length === 0 ){
+              dragDelta.push(0);
+              dragDelta.push(0);
+            } else {
+              dragDelta[0] += disp[0];
+              dragDelta[1] += disp[1];
             }
           }
-
-          r.hoverData.draggingEles = true;
-          
-          var tcol = (new $$.Collection(cy, toTrigger));
-
-          tcol.updateCompoundBounds();
-          tcol.trigger('position drag');
-          
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
-          r.redraw();
         }
 
         // prevent the dragging from triggering text selection on the page
@@ -645,14 +680,13 @@
       }
       
       select[2] = pos[0]; select[3] = pos[1];
-    
       
       if( preventDefault ){ 
         if(e.stopPropagation) e.stopPropagation();
           if(e.preventDefault) e.preventDefault();
           return false;
         }
-    }, 1000/30), false);
+    }, 1000/30, { trailing: true }), false);
     
     r.registerBinding(window, 'mouseup', function(e) {
       // console.log('--\nmouseup', e)
@@ -915,6 +949,7 @@
 //      console.log('ss', select);
       
       r.dragData.didDrag = false;
+      r.hoverData.dragDelta = [];
       
     }, false);
 
@@ -998,7 +1033,7 @@
     }, false);
     
     var f1x1, f1y1, f2x1, f2y1; // starting points for pinch-to-zoom
-    var distance1; // initial distance between finger 1 and finger 2 for pinch-to-zoom
+    var distance1, distance1Sq; // initial distance between finger 1 and finger 2 for pinch-to-zoom
     var center1, modelCenter1; // center point on start pinch to zoom
     var offsetLeft, offsetTop;
     var containerWidth, containerHeight;
@@ -1006,6 +1041,10 @@
 
     var distance = function(x1, y1, x2, y2){
       return Math.sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );
+    };
+
+    var distanceSq = function(x1, y1, x2, y2){
+      return (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1);
     };
 
     r.registerBinding(r.data.container, 'touchstart', function(e) {
@@ -1064,6 +1103,7 @@
         var zoom = cy.zoom();
 
         distance1 = distance( f1x1, f1y1, f2x1, f2y1 );
+        distance1Sq = distanceSq( f1x1, f1y1, f2x1, f2y1 );
         center1 = [ (f1x1 + f2x1)/2, (f1y1 + f2y1)/2 ];
         modelCenter1 = [ 
           (center1[0] - pan.x) / zoom,
@@ -1071,7 +1111,9 @@
         ];
 
         // consider context tap
-        if( distance1 < 200 && !e.touches[2] ){
+        var cxtDistThreshold = 200;
+        var cxtDistThresholdSq = cxtDistThreshold * cxtDistThreshold;
+        if( distance1Sq < cxtDistThresholdSq && !e.touches[2] ){
 
           var near1 = r.findNearestElement(now[0], now[1], true);
           var near2 = r.findNearestElement(now[2], now[3], true);
@@ -1217,6 +1259,8 @@
         
         setTimeout(function() {
           if (r.touchData.singleTouchMoved === false
+              && !r.pinching // if pinching, then taphold unselect shouldn't take effect
+
               // This time double constraint prevents multiple quick taps
               // followed by a taphold triggering multiple taphold events
               && (+new Date()) - r.touchData.singleTouchStartTime > 250) {
@@ -1253,6 +1297,7 @@
     
       var cy = r.data.cy; 
       var now = r.touchData.now; var earlier = r.touchData.earlier;
+      var zoom = cy.zoom();
       
       if (e.touches[0]) { var pos = r.projectIntoViewport(e.touches[0].clientX, e.touches[0].clientY); now[0] = pos[0]; now[1] = pos[1]; }
       if (e.touches[1]) { var pos = r.projectIntoViewport(e.touches[1].clientX, e.touches[1].clientY); now[2] = pos[0]; now[3] = pos[1]; }
@@ -1263,13 +1308,19 @@
       if( capture && r.touchData.cxt ){
         var f1x2 = e.touches[0].clientX - offsetLeft, f1y2 = e.touches[0].clientY - offsetTop;
         var f2x2 = e.touches[1].clientX - offsetLeft, f2y2 = e.touches[1].clientY - offsetTop;
-        var distance2 = distance( f1x2, f1y2, f2x2, f2y2 );
-        var factor = distance2 / distance1;
+        // var distance2 = distance( f1x2, f1y2, f2x2, f2y2 );
+        var distance2Sq = distanceSq( f1x2, f1y2, f2x2, f2y2 );
+        var factorSq = distance2Sq / distance1Sq;
+
+        var distThreshold = 150;
+        var distThresholdSq = distThreshold * distThreshold;
+        var factorThreshold = 1.5;
+        var factorThresholdSq = factorThreshold * factorThreshold;
 
         //console.log(factor, distance2)
 
         // cancel ctx gestures if the distance b/t the fingers increases
-        if( factor >= 1.5 || distance2 >= 150 ){
+        if( factorSq >= factorThresholdSq || distance2Sq >= distThresholdSq ){
           r.touchData.cxt = false;
           if( r.touchData.start ){ r.touchData.start.unactivate(); r.touchData.start = null; }
           r.data.bgActivePosistion = undefined;
@@ -1378,6 +1429,8 @@
         // console.log( f2x2, f2y2 )
 
         var distance2 = distance( f1x2, f1y2, f2x2, f2y2 );
+        // var distance2Sq = distanceSq( f1x2, f1y2, f2x2, f2y2 );
+        // var factor = Math.sqrt( distance2Sq ) / Math.sqrt( distance1Sq );
         var factor = distance2 / distance1;
 
         // console.log(distance2)
@@ -1473,43 +1526,77 @@
         var last = r.touchData.last;
         var near = near || r.findNearestElement(now[0], now[1], true);
 
-        if ( start != null && start._private.group == 'nodes' && r.nodeIsDraggable(start)) {
-          var draggedEles = r.dragData.touchDragEles;
+        if( start != null && start._private.group == 'nodes' && r.nodeIsDraggable(start) ){
 
-          for( var k = 0; k < draggedEles.length; k++ ){
-            var draggedEle = draggedEles[k];
+          var startPos = r.touchData.startPosition;
 
-            if( r.nodeIsDraggable(draggedEle) && draggedEle.isNode() && draggedEle.grabbed() ){
-              r.dragData.didDrag = true;
-              var dPos = draggedEle._private.position;
+          var dx = now[0] - startPos[0];
+          var dx2 = dx * dx;
+          var dy = now[1] - startPos[1];
+          var dy2 = dy * dy;
+          var dist2 = dx2 + dy2;
+          var rdist2 = dist2 * zoom * zoom;
 
-              dPos.x += disp[0];
-              dPos.y += disp[1];
+          // TODO thresh
+          if( rdist2 >= r.tapThreshold2 ){ // then dragging can happen
+            var draggedEles = r.dragData.touchDragEles;
 
-              if( !r.hoverData.draggingEles ){
-                addNodeToDrag( draggedEle, { inDragLayer: true } );
+            for( var k = 0; k < draggedEles.length; k++ ){
+              var draggedEle = draggedEles[k];
+
+              if( r.nodeIsDraggable(draggedEle) && draggedEle.isNode() && draggedEle.grabbed() ){
+                r.dragData.didDrag = true;
+                var dPos = draggedEle._private.position;
+                var justStartedDrag = !r.hoverData.draggingEles;
+
+                if( $$.is.number(disp[0]) && $$.is.number(disp[1]) ){
+                  dPos.x += disp[0];
+                  dPos.y += disp[1];
+                }
+
+                if( justStartedDrag ){
+                  addNodeToDrag( draggedEle, { inDragLayer: true } );
+
+                  var dragDelta = r.touchData.dragDelta;
+
+                  if( $$.is.number(dragDelta[0]) && $$.is.number(dragDelta[1]) ){
+                    dPos.x += dragDelta[0];
+                    dPos.y += dragDelta[1];
+                  }
+
+                }
               }
             }
-          }
 
-          var tcol = new $$.Collection(cy, draggedEle);
-          
-          tcol.updateCompoundBounds();
-          tcol.trigger('position drag');
-
-          r.hoverData.draggingEles = true;
-          
-          r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
-
-          if( 
-               r.touchData.startPosition[0] == earlier[0]
-            && r.touchData.startPosition[1] == earlier[1]
-          ){
+            var tcol = new $$.Collection(cy, draggedEle);
             
-            r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+            tcol.updateCompoundBounds();
+            tcol.trigger('position drag');
+
+            r.hoverData.draggingEles = true;
+            
+            r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
+
+            if( 
+                 r.touchData.startPosition[0] == earlier[0]
+              && r.touchData.startPosition[1] == earlier[1]
+            ){
+              
+              r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true;
+            }
+            
+            r.redraw();
+          } else { // otherise keep track of drag delta for later
+            var dragDelta = r.touchData.dragDelta = r.touchData.dragDelta || [];
+
+            if( dragDelta.length === 0 ){
+              dragDelta.push(0);
+              dragDelta.push(0);
+            } else {
+              dragDelta[0] += disp[0];
+              dragDelta[1] += disp[1];
+            }
           }
-          
-          r.redraw();
         }
         
         // Touchmove event
@@ -1615,7 +1702,7 @@
       for (var j=0; j<now.length; j++) { earlier[j] = now[j]; }
       //r.redraw();
       
-    }, 1000/30), false);
+    }, 1000/30, { trailing: true }), false);
     
     r.registerBinding(window, 'touchcancel', function(e) {
       var start = r.touchData.start;
@@ -1645,6 +1732,7 @@
       r.hoverData.draggingEles = false;
       
       var cy = r.data.cy; 
+      var zoom = cy.zoom();
       var now = r.touchData.now;
       var earlier = r.touchData.earlier;
 
@@ -1731,12 +1819,6 @@
           }
 
         //}, 100);
-      }
-
-      if( e.touches.length < 2 ){
-        r.pinching = false;
-        r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
-        r.redraw();
       }
 
       var updateStartStyle = false;
@@ -1849,12 +1931,21 @@
             ;
           }
         }
+
+        var dx = r.touchData.startPosition[0] - now[0];
+        var dx2 = dx * dx;
+        var dy = r.touchData.startPosition[1] - now[1];
+        var dy2 = dy * dy;
+        var dist2 = dx2 + dy2;
+        var rdist2 = dist2 * zoom * zoom;
         
         // Prepare to select the currently touched node, only if it hasn't been dragged past a certain distance
         if (start != null 
             && !r.dragData.didDrag // didn't drag nodes around
             && start._private.selectable 
-            && (Math.sqrt(Math.pow(r.touchData.startPosition[0] - now[0], 2) + Math.pow(r.touchData.startPosition[1] - now[1], 2))) < 6) {
+            && rdist2 < r.tapThreshold2
+            && !r.pinching // pinch to zoom should not affect selection
+        ) {
 
           if( cy.selectionType() === 'single' ){
             cy.$(':selected').not( start ).unselect();
@@ -1910,8 +2001,18 @@
 
       r.dragData.didDrag = false; // reset for next mousedown
 
+      if( e.touches[0] ){
+        r.touchData.dragDelta = [];
+      }
+
       if( updateStartStyle && start ){
         start.updateStyle(false);
+      }
+
+      if( e.touches.length < 2 ){
+        r.pinching = false;
+        r.data.canvasNeedsRedraw[CanvasRenderer.NODE] = true; 
+        r.redraw();
       }
 
       //r.redraw();

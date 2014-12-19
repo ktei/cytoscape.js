@@ -9,8 +9,8 @@ DOC_DIR=documentation
 
 $RM $TEMP_DIR/cytoscape.js
 $GIT clone -b gh-pages https://github.com/cytoscape/cytoscape.js.git $TEMP_DIR/cytoscape.js
-$CP $DOC_DIR/* $TEMP_DIR/cytoscape.js/beta
+$CP $DOC_DIR/* $TEMP_DIR/cytoscape.js/unstable
 $CD $TEMP_DIR/cytoscape.js
 $GIT add -A
-$GIT commit -a -m "updating beta docs to $VERSION"
+$GIT commit -a -m "updating unstable docs to $VERSION"
 $GIT push origin

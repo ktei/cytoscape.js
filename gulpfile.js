@@ -17,6 +17,8 @@ var jshint = require('gulp-jshint');
 var jshStylish = require('jshint-stylish');
 var exec = require('child_process').exec;
 var runSequence = require('run-sequence');
+var browserify = require('browserify');
+var source = require('vinyl-source-stream'); // converts node streams into vinyl streams
 
 var version; // used for marking builds w/ version etc
 
@@ -318,7 +320,7 @@ gulp.task('docsdemoshots', function(next){
 });
 
 gulp.task('docspub', function(next){
-  runSequence( 'version', 'docsver', 'docsjs', 'docsbuildlist', 'docsdemoshots', 'docs', 'docsmin', next );
+  runSequence( 'version', 'docsver', 'docsjs', 'docsbuildlist', 'docsdemoshots', 'docsmin', next );
 });
 
 gulp.task('docsrebuild', function(next){
@@ -357,10 +359,25 @@ gulp.task('docspush', shell.task([
   './publish-docs.sh'
 ]));
 
-gulp.task('betadocspush', shell.task([
-  './publish-beta-docs.sh'
+gulp.task('unstabledocspush', shell.task([
+  './publish-unstable-docs.sh'
 ]));
 
+// browserify debug build
+gulp.task('browserify', ['build'], function(){
+  var b = browserify({ debug: true, hasExports: true });
+  
+  b.add('./build/cytoscape.js', { expose: "cytoscape" });
+
+  return b.bundle()
+    .pipe( source('cytoscape.browserify.js') )
+    .pipe( gulp.dest('build') )
+  ;
+});
+
+gulp.task('sniper', ['browserify'], shell.task([
+  'npm run sniper'
+]));
 
 gulp.task('npm', shell.task([
   './publish-npm.sh'

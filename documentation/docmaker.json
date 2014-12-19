@@ -1,5 +1,5 @@
 {
-  "version": "2.3.4",
+  "version": "2.3.5",
 
   "fnArgLinks": {
     "selector": "#selectors",
@@ -381,7 +381,7 @@
 
             {
               "name": "cy.panningEnabled",
-              "descr": "Get or set whether panning is enabled.",
+              "descr": "Get or set whether panning is enabled.  If `cy.boxSelectionEnabled() === true`, then the user must taphold to initiate panning.",
               "formats": [
                 {
                   "descr": "Get whether panning is enabled."
@@ -399,7 +399,7 @@
 
             {
               "name": "cy.userPanningEnabled",
-              "descr": "Get or set whether panning by user events (e.g. dragging the graph background) is enabled.",
+              "descr": "Get or set whether panning by user events (e.g. dragging the graph background) is enabled.  If `cy.boxSelectionEnabled() === true`, then the user must taphold to initiate panning.",
               "formats": [
                 {
                   "descr": "Get whether user panning is enabled."
@@ -525,7 +525,7 @@
 
             {
               "name": "cy.boxSelectionEnabled",
-              "descr": "Get or set whether box selection is enabled.",
+              "descr": "Get or set whether box selection is enabled.   If enabled, the user must hold left-click to initiate panning.",
               "formats": [
                 {
                   "descr": "Get whether box selection is enabled."
@@ -737,7 +737,7 @@
 
             {
               "name": "cy.makeLayout",
-              "descr": "Get a new layout, which can be used to algorithmically positions the nodes in the graph.",
+              "descr": "Get a new layout, which can be used to algorithmically position the nodes in the graph.",
               "formats": [
                 {
                   "args": [
