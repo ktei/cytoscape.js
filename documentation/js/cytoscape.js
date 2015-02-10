@@ -1,5 +1,5 @@
 /*!
- * This file is part of Cytoscape.js 2.3.7.
+ * This file is part of Cytoscape.js 2.3.9.
  * 
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -29,7 +29,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = '2.3.7';
+  $$.version = '2.3.9';
   
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -4498,15 +4498,19 @@ var cytoscape;
     
     var str = '';
     
-    var clean = function(obj){
+    var clean = function(obj, isValue){
       if( $$.is.string(obj) ){
-        return obj;
+        return isValue ? '"' + obj + '"' : obj;
       } 
       return '';
     };
     
     var queryToString = function(query){
       var str = '';
+
+      if( query.subject === query ){
+        str += '$';
+      }
 
       var group = clean(query.group);
       str += group.substring(0, group.length - 1);
@@ -4515,7 +4519,7 @@ var cytoscape;
         var data = query.data[j];
         
         if( data.value ){
-          str += '[' + data.field + clean(data.operator) + clean(data.value) + ']';
+          str += '[' + data.field + clean(data.operator) + clean(data.value, true) + ']';
         } else {
           str += '[' + clean(data.operator) + data.field + ']';
         }
@@ -4523,7 +4527,7 @@ var cytoscape;
 
       for(var j = 0; j < query.meta.length; j++){
         var meta = query.meta[j];
-        str += '[[' + meta.field + clean(meta.operator) + clean(meta.value) + ']]';
+        str += '[[' + meta.field + clean(meta.operator) + clean(meta.value, true) + ']]';
       }
       
       for(var j = 0; j < query.colonSelectors.length; j++){
@@ -4963,6 +4967,8 @@ var cytoscape;
           'outside-texture-bg-opacity': 0.125
         })
     ;
+
+    this.defaultLength = this.length;
   };
 
   // remove all contexts
@@ -5539,7 +5545,7 @@ var cytoscape;
 
       retDiffProp.next = ele._private.style[ diffPropName ];
 
-      if( retDiffProp.next.bypass ){
+      if( retDiffProp.next && retDiffProp.next.bypass ){
         retDiffProp.next = retDiffProp.next.bypassed;
       }
     }
@@ -6233,7 +6239,7 @@ var cytoscape;
   $$.styfn.json = function(){
     var json = [];
 
-    for( var i = 0; i < this.length; i++ ){
+    for( var i = this.defaultLength; i < this.length; i++ ){
       var cxt = this[i];
       var selector = cxt.selector;
       var props = cxt.properties;
@@ -13509,6 +13515,10 @@ var cytoscape;
     if( this.removeObserver ){
       this.removeObserver.disconnect();
     }
+
+    if( this.labelCalcDiv ){
+      document.body.removeChild(this.labelCalcDiv);
+    }
   };
 
   
@@ -14945,6 +14955,9 @@ var cytoscape;
         var tgtH1 = rs.lastTgtCtlPtH;
         var tgtH2 = tgt.outerHeight();
 
+        var width1 = rs.lastW;
+        var width2 = eStyle['control-point-step-size'].pxValue;
+
         if( badBezier ){
           rs.badBezier = true;
         } else {
@@ -14953,6 +14966,7 @@ var cytoscape;
 
         if( srcX1 === srcX2 && srcY1 === srcY2 && srcW1 === srcW2 && srcH1 === srcH2
         &&  tgtX1 === tgtX2 && tgtY1 === tgtY2 && tgtW1 === tgtW2 && tgtH1 === tgtH2
+        &&  width1 === width2
         &&  ((edgeIndex1 === edgeIndex2 && numEdges1 === numEdges2) || edgeIsUnbundled) ){
           // console.log('edge ctrl pt cache HIT')
           continue; // then the control points haven't changed and we can skip calculating them
@@ -14967,6 +14981,7 @@ var cytoscape;
           rs.lastTgtCtlPtH = tgtH2;
           rs.lastEdgeIndex = edgeIndex2;
           rs.lastNumEdges = numEdges2;
+          rs.lastWidth = width2;
           // console.log('edge ctrl pt cache MISS')
         }
 
@@ -15167,10 +15182,11 @@ var cytoscape;
           x: Math.cos(angle),
           y: Math.sin(angle)
         };
-
-        rscratch.edgeType = 'haystack';
-        rscratch.haystack = true;
       }  
+
+      // always override as haystack in case set to different type previously
+      rscratch.edgeType = 'haystack';
+      rscratch.haystack = true;
     }
 
     return hashTable;
@@ -16578,11 +16594,11 @@ var cytoscape;
     var motionBlur = options.motionBlur !== undefined ? options.motionBlur : r.motionBlur;
     motionBlur = motionBlur && !forcedContext && r.motionBlurEnabled;
 
-    if( r.motionBlurTimeout ){
+    if( motionBlur && r.motionBlurTimeout ){
       clearTimeout( r.motionBlurTimeout );
     }
 
-    if( this.redrawTimeout ){
+    if( !forcedContext && this.redrawTimeout ){
       clearTimeout( this.redrawTimeout );
     }
     this.redrawTimeout = null;
@@ -16853,7 +16869,7 @@ var cytoscape;
 
         setContextTransform( context );
 
-        if (data.select[4] == 1) {
+        if( data.select[4] == 1 && r.hoverData.selecting ){
           var zoom = data.cy.zoom();
           var borderWidth = coreStyle['selection-box-border-width'].value / zoom;
           
@@ -16885,7 +16901,7 @@ var cytoscape;
           }
         }
 
-        if( data.bgActivePosistion ){
+        if( data.bgActivePosistion && !r.hoverData.selecting ){
           var zoom = data.cy.zoom();
           var pos = data.bgActivePosistion;
 
@@ -17675,8 +17691,7 @@ var cytoscape;
         }
 
       }
-      
-      
+
       // trigger context drag if rmouse down
       if( r.hoverData.which === 3 ){
         var cxtEvt = new $$.Event(e, {
@@ -17751,13 +17766,14 @@ var cytoscape;
       // Checks primary button down & out of time & mouse not moved much
       } else if(
           select[4] == 1 && (down == null || down.isEdge())
-          && ( !cy.boxSelectionEnabled() || +new Date() - r.hoverData.downTime >= CanvasRenderer.panOrBoxSelectDelay )
+          && ( !cy.boxSelectionEnabled() || (+new Date() - r.hoverData.downTime >= CanvasRenderer.panOrBoxSelectDelay) )
           //&& (Math.abs(select[3] - select[1]) + Math.abs(select[2] - select[0]) < 4)
+          && !r.hoverData.selecting
           && rdist2 >= r.tapThreshold2
           && cy.panningEnabled() && cy.userPanningEnabled()
       ){
-        
         r.hoverData.dragging = true;
+        r.hoverData.selecting = false;
         r.hoverData.justStartedPan = true;
         select[4] = 0;
 
@@ -17766,6 +17782,7 @@ var cytoscape;
         if (cy.boxSelectionEnabled() && Math.pow(select[2] - select[0], 2) + Math.pow(select[3] - select[1], 2) > 7 && select[4]){
           clearTimeout( r.bgActiveTimeout );
           r.data.bgActivePosistion = undefined;
+          r.hoverData.selecting = true;
 
           r.data.canvasNeedsRedraw[CanvasRenderer.SELECT_BOX] = true;
           r.redraw();
@@ -17897,6 +17914,7 @@ var cytoscape;
 
       r.hoverData.cxtStarted = false;
       r.hoverData.draggingEles = false;
+      r.hoverData.selecting = false;
 
       if( down ){
         down.unactivate();
