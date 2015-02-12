@@ -179,7 +179,11 @@
     }
 
     if( this.labelCalcDiv ){
-      document.body.removeChild(this.labelCalcDiv);
+      try {
+        document.body.removeChild(this.labelCalcDiv);
+      } catch (err) {
+        // do nothing, simply ignore stupid IE error
+      }
     }
   };
 
