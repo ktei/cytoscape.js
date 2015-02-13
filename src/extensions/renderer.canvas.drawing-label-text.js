@@ -177,6 +177,26 @@
     return text;
   };
 
+  var wrapText = function(context, text, x, y, maxWidth, lineHeight) {
+    var words = text.split(' ');
+    var line = '';
+
+    for(var n = 0; n < words.length; n++) {
+      var testLine = line + words[n] + ' ';
+      var metrics = context.measureText(testLine);
+      var testWidth = metrics.width;
+      if (testWidth > maxWidth && n > 0) {
+        context.fillText(line, x, y);
+        line = words[n] + ' ';
+        y += lineHeight;
+      }
+      else {
+        line = testLine;
+      }
+    }
+    context.fillText(line, x, y);
+  }
+
   // Draw text
   CanvasRenderer.prototype.drawText = function(context, element, textX, textY) {
     var style = element._private.style;
@@ -193,7 +213,8 @@
         context.strokeText(text, textX, textY);
       }
 
-      context.fillText(text, textX, textY);
+      // context.fillText(text, textX, textY);
+      wrapText(context, text, textX, textY, 80, 8);
     }
   };
 
