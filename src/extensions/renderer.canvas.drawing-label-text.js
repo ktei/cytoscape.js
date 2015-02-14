@@ -49,7 +49,7 @@
       context.translate(rs.labelX, rs.labelY);
       context.rotate(theta);
 
-      this.drawText(context, edge, 0, -4); // make label offset from the edge a bit
+      this.drawTextForEdge(context, edge, 0, 0); // make label offset from the edge a bit
 
       context.rotate(-theta);
       context.translate(-rs.labelX, -rs.labelY);
@@ -194,6 +194,8 @@
         line = testLine;
       }
     }
+
+
     context.fillText(line, x, y);
   }
 
@@ -215,6 +217,61 @@
 
       // context.fillText(text, textX, textY);
       wrapText(context, text, textX, textY, 80, 8);
+    }
+  };
+
+  function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+    if (typeof stroke == "undefined" ) {
+      stroke = true;
+    }
+    if (typeof radius === "undefined") {
+      radius = 5;
+    }
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    if (stroke) {
+      ctx.stroke();
+    }
+    if (fill) {
+      ctx.fill();
+    }        
+  }
+
+
+  CanvasRenderer.prototype.drawTextForEdge = function(context, element, textX, textY) {
+    var style = element._private.style;
+    var parentOpacity = element.effectiveOpacity();
+    if( parentOpacity === 0 ){ return; }
+
+    var text = this.setupTextStyle( context, element );
+    
+    if ( text != null && !isNaN(textX) && !isNaN(textY) ) {
+     
+      var lineWidth = 2  * style['text-outline-width'].value; // *2 b/c the stroke is drawn centred on the middle
+      if (lineWidth > 0) {
+        context.lineWidth = lineWidth;
+        context.strokeText(text, textX, textY);
+      }
+
+      var metrics = context.measureText(text);
+      var lineColor = style['line-color'].value;
+      context.fillStyle = this.fillStyle(context, lineColor[0], lineColor[1], lineColor[2], 1);
+      context.strokeStyle  = this.strokeStyle(context, lineColor[0], lineColor[1], lineColor[2], 1);
+      var bgWidth = metrics.width + 4;
+      var bgHeight = style['font-size'].pxValue;
+      roundRect(context, textX - bgWidth / 2, textY - bgHeight / 2, bgWidth, bgHeight, 2, true);
+      context.fillStyle = '#333';
+      context.fillText(text, textX, textY);
+
     }
   };
 
