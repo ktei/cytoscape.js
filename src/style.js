@@ -245,7 +245,6 @@
           'font-size': fontSize,
           'min-zoomed-font-size': 0,
           'edge-text-rotation': 'none',
-          'edge-text-background': 'none',
           'visibility': 'visible',
           'display': 'element',
           'opacity': 1,
