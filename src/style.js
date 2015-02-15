@@ -84,7 +84,7 @@
       url: { regex: '^url\\s*\\(\\s*([^\\s]+)\\s*\\s*\\)|none|(.+)$' },
       propList: { propList: true },
       angle: { number: true, units: 'deg|rad' },
-      textRotation: { enums: ['none', 'autorotate'] }
+      textRotation: { enums: ['none', 'autorotate', 'autorotate-with-background'] }
     };
 
     // define visual style properties
@@ -245,6 +245,7 @@
           'font-size': fontSize,
           'min-zoomed-font-size': 0,
           'edge-text-rotation': 'none',
+          'edge-text-background': 'none',
           'visibility': 'visible',
           'display': 'element',
           'opacity': 1,
