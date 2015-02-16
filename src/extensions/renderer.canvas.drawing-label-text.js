@@ -260,9 +260,9 @@
         context.fillText(text, textX, textY);
       } else {
         var metrics = context.measureText(text);
-        var lineColor = style['line-color'].value;
-        context.fillStyle = this.fillStyle(context, lineColor[0], lineColor[1], lineColor[2], 1);
-        context.strokeStyle  = this.strokeStyle(context, lineColor[0], lineColor[1], lineColor[2], 1);
+        var labelBgColor = style['edge-label-background-color'].value;
+        context.fillStyle = this.fillStyle(context, labelBgColor[0], labelBgColor[1], labelBgColor[2], 1);
+        context.strokeStyle  = this.strokeStyle(context, labelBgColor[0], labelBgColor[1], labelBgColor[2], 1);
         var bgWidth = metrics.width + 4;
         var bgHeight = style['font-size'].pxValue;
         roundRect(context, textX - bgWidth / 2, textY - bgHeight / 2, bgWidth, bgHeight, 2);

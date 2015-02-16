@@ -164,6 +164,7 @@
       { name: 'control-point-weight', type: t.zeroOneNumber },
       { name: 'curve-style', type: t.curveStyle },
       { name: 'haystack-radius', type: t.zeroOneNumber },
+      { name: 'edge-label-background-color', type: t.color },
 
       // edge arrows
       { name: 'source-arrow-shape', type: t.arrowShape },
