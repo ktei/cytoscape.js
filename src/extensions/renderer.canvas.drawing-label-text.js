@@ -221,7 +221,7 @@
 
       // context.fillText(text, textX, textY);
       var fontSize = window.reveal.fontSize || 7; // real bad practice
-      wrapText(context, text, textX, textY, 50, fontSize + 1);
+      wrapText(context, text, textX, textY, 75, fontSize + 1);
     }
   };
 
