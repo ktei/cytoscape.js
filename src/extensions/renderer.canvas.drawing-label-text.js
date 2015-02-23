@@ -220,7 +220,8 @@
       }
 
       // context.fillText(text, textX, textY);
-      wrapText(context, text, textX, textY, 80, 8);
+      var fontSize = window.reveal.fontSize || 7; // real bad practice
+      wrapText(context, text, textX, textY, 50, fontSize + 1);
     }
   };
 
