@@ -189,6 +189,7 @@
       var testLine = line + words[n] + ' ';
       var metrics = context.measureText(testLine);
       var testWidth = metrics.width;
+      testWidth = testWidth / (window.reveal.fontSize / 7);
       if (testWidth > maxWidth && n > 0) {
         context.fillText(line, x, y);
         line = words[n] + ' ';
