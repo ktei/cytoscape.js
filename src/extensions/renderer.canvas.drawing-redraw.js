@@ -176,6 +176,7 @@
     var needDraw = data.canvasNeedsRedraw;
     var motionBlur = options.motionBlur !== undefined ? options.motionBlur : r.motionBlur;
     motionBlur = motionBlur && !forcedContext && r.motionBlurEnabled;
+    r.aggressiveRedraw = options.aggressive;
 
     if( motionBlur && r.motionBlurTimeout ){
       clearTimeout( r.motionBlurTimeout );
@@ -209,7 +210,7 @@
 
         // we have new things to draw but we're busy, so try again when possibly free
         this.redrawTimeout = setTimeout(function(){
-          r.redraw();
+          r.redraw(options);
         }, redrawLimit);
         return;
       }
@@ -406,7 +407,7 @@
             r.drawEdge(context, ele);
 
             if( !hideLabels ){
-              r.drawEdgeText(context, ele);
+              r.drawEdgeText(context, ele, r.aggressiveRedraw);
             }
 
             r.drawEdge(context, ele, true);
@@ -414,7 +415,10 @@
           
           
         }
-
+        // Once we done draw elements, we reset aggressiveRedraw flag so that
+        // next time we dont just go aggressive unless redraw.options tells us
+        // to do so
+        r.aggressiveRedraw = false;
       }
 
       var nodeLayerNeedsMotionClear = needDraw[CanvasRenderer.DRAG] && !needDraw[CanvasRenderer.NODE] && motionBlur && !r.clearedNodeLayerForMotionBlur;
