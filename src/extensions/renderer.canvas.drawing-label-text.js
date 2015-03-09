@@ -3,7 +3,7 @@
   var CanvasRenderer = $$('renderer', 'canvas');
 
   // Draw edge text
-  CanvasRenderer.prototype.drawEdgeText = function(context, edge, aggressive) {
+  CanvasRenderer.prototype.drawEdgeText = function(context, edge) {
     var text = edge._private.style['content'].strValue;
 
     if( !text || text.match(/^\s+$/) ){
@@ -24,15 +24,13 @@
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    if (aggressive === true) {
-      this.recalculateEdgeLabelProjection( edge );
-    }
+    // this.recalculateEdgeLabelProjection( edge );
     
     var rs = edge._private.rscratch;
     if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
 
     var style = edge._private.style;
-    var autorotate = style['edge-text-rotation'].strValue === 'autorotate' || style['edge-text-rotation'].strValue === 'autorotate-with-background';
+    var autorotate = style['edge-text-rotation'].strValue === 'autorotate';
     var theta, dx, dy;
     
     if( autorotate ){
@@ -51,11 +49,7 @@
       context.translate(rs.labelX, rs.labelY);
       context.rotate(theta);
 
-      if (style['edge-text-rotation'].strValue === 'autorotate') {
-        this.drawRotatedText(context, edge, false);
-      } else {
-        this.drawRotatedText(context, edge, true);
-      }
+      this.drawText(context, edge, 0, -4); // make label offset from the edge a bit
 
       context.rotate(-theta);
       context.translate(-rs.labelX, -rs.labelY);
@@ -151,6 +145,11 @@
     var outlineOpacity = style['text-outline-opacity'].value * opacity;
     var color = style['color'].value;
     var outlineColor = style['text-outline-color'].value;
+    var shadowBlur = style['text-shadow-blur'].pxValue;
+    var shadowOpacity = style['text-shadow-opacity'].value;
+    var shadowColor = style['text-shadow-color'].value;
+    var shadowOffsetX = style['text-shadow-offset-x'].pxValue;
+    var shadowOffsetY = style['text-shadow-offset-y'].pxValue;
 
     var fontCacheKey = element._private.fontKey;
     var cache = this.getFontCache(context);
@@ -179,31 +178,26 @@
     this.fillStyle(context, color[0], color[1], color[2], opacity);
     
     this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
+    
+    // this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
 
     return text;
   };
 
-  var wrapText = function(context, text, x, y, maxWidth, lineHeight) {
-    var words = text.split(' ');
-    var line = '';
-
-    for(var n = 0; n < words.length; n++) {
-      var testLine = line + words[n] + ' ';
-      var metrics = context.measureText(testLine);
-      var testWidth = metrics.width;
-      testWidth = testWidth / (window.reveal.fontSize / 7);
-      if (testWidth > maxWidth && n > 0) {
-        context.fillText(line, x, y);
-        line = words[n] + ' ';
-        y += lineHeight;
-      }
-      else {
-        line = testLine;
-      }
-    }
-
-
-    context.fillText(line, x, y);
+  function roundRect(ctx, x, y, width, height, radius) {
+    var radius = radius || 5;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
   }
 
   // Draw text
@@ -253,18 +247,25 @@
         } else {
           bgY = bgY - bgHeight / 2;
         }
-        
-        // Adjust with border width & margin
-        bgX -= margin;
-        bgY -= margin;
-        bgHeight += margin*2;
-        bgWidth += margin*2;
+
+        if (style['edge-text-rotation'].strValue === 'autorotate') {
+          textY = 0;
+          bgWidth += 4;
+          bgX = textX - bgWidth / 2;
+          bgY = textY - bgHeight / 2;
+        } else {
+          // Adjust with border width & margin
+          bgX -= margin;
+          bgY -= margin;
+          bgHeight += margin*2;
+          bgWidth += margin*2;
+        }
         
         if (style["text-background-color"]) {
           var textFill = context.fillStyle;
           var textBackgroundColor = style["text-background-color"].value;
           context.fillStyle = "rgba(" + textBackgroundColor[0] + "," + textBackgroundColor[1] + "," + textBackgroundColor[2] + "," + backgroundOpacity * parentOpacity + ")";
-          context.fillRect(bgX,bgY,bgWidth,bgHeight);
+          roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
           context.fillStyle = textFill;
         }
         
@@ -313,58 +314,9 @@
         context.strokeText(text, textX, textY);
       }
 
-      // context.fillText(text, textX, textY);
-      var fontSize = window.reveal.fontSize || 7; // real bad practice
-      wrapText(context, text, textX, textY, 75, fontSize + 1);
-    }
-  };
+      context.fillText(text, textX, textY);
 
-  function roundRect(ctx, x, y, width, height, radius) {
-    var radius = radius || 5;
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    ctx.fill();
-  }
-
-  CanvasRenderer.prototype.drawRotatedText = function(context, element, background) {
-    var textX = 0,
-        textY = background === true ? 0 : -4;
-    var style = element._private.style;
-    var parentOpacity = element.effectiveOpacity();
-    if( parentOpacity === 0 ){ return; }
-
-    var text = this.setupTextStyle( context, element );
-    
-    if ( text != null && !isNaN(textX) && !isNaN(textY) ) {
-     
-      var lineWidth = 2  * style['text-outline-width'].value; // *2 b/c the stroke is drawn centred on the middle
-      if (lineWidth > 0) {
-        context.lineWidth = lineWidth;
-        context.strokeText(text, textX, textY);
-      }
-      if (!background) {
-        context.fillText(text, textX, textY);
-      } else {
-        var metrics = context.measureText(text);
-        var labelBgColor = style['edge-label-background-color'].value;
-        context.fillStyle = this.fillStyle(context, labelBgColor[0], labelBgColor[1], labelBgColor[2], 1);
-        context.strokeStyle  = this.strokeStyle(context, labelBgColor[0], labelBgColor[1], labelBgColor[2], 1);
-        var bgWidth = metrics.width + 4;
-        var bgHeight = style['font-size'].pxValue;
-        roundRect(context, textX - bgWidth / 2, textY - bgHeight / 2, bgWidth, bgHeight, 2);
-        var color = style['color'].value;
-        context.fillStyle = this.fillStyle(context, color[0], color[1], color[2], 1);
-        context.fillText(text, textX, textY);
-      }
+      // this.shadowStyle(context, 'transparent', 0); // reset for next guy
     }
   };
 
