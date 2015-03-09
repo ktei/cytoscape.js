@@ -179,7 +179,7 @@
     
     this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
     
-    // this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
+    this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
 
     return text;
   };
@@ -316,7 +316,7 @@
 
       context.fillText(text, textX, textY);
 
-      // this.shadowStyle(context, 'transparent', 0); // reset for next guy
+      this.shadowStyle(context, 'transparent', 0); // reset for next guy
     }
   };
 
