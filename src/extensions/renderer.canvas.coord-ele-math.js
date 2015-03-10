@@ -676,6 +676,7 @@
         }
       } // for
 
+      rscratch.labelWrapCachedLines = wrappedLines;
       rscratch.labelWrapCachedText = text = wrappedLines.join('\n');
       rscratch.labelWrapKey = rscratch.labelKey;
 
