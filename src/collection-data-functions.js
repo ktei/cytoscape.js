@@ -570,10 +570,6 @@
 
           if( includedEle && includeLabels && label && fontSize && labelHeight != null && labelWidth != null && labelX != null && labelY != null && halign && valign ){
             var lh = labelHeight;
-            if (style['text-wrap'].value == 'wrap' && ele.wrappedTextHeight > 0) {
-              lh = ele.wrappedTextHeight * cy.zoom();
-            }
-            lh += 2 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
             var lw = labelWidth;
             var lx1, lx2, ly1, ly2;
 
@@ -583,6 +579,10 @@
               ly1 = labelY - lh/2;
               ly2 = labelY + lh/2;
             } else {
+              if (style['text-wrap'].value == 'wrap' && ele.wrappedTextHeight > 0) {
+                lh = ele.wrappedTextHeight * cy.zoom();
+              }
+              lh += 2 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
               switch( halign.value ){
                 case 'left':
                   lx1 = labelX - lw;
