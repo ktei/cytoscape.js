@@ -200,10 +200,10 @@
     ctx.fill();
   }
 
-  function wrapText(context, text, x, y, maxWidth, lineHeight) {
+  function wrapText(context, ele, text, x, y, maxWidth, lineHeight) {
     var words = text.split(' ');
     var line = '';
-
+    ele.wrappedTextHeight = 0;
     for(var n = 0; n < words.length; n++) {
       var testLine = line + words[n] + ' ';
       var metrics = context.measureText(testLine);
@@ -213,6 +213,7 @@
         context.fillText(line, x, y);
         line = words[n] + ' ';
         y += lineHeight;
+        ele.wrappedTextHeight += lineHeight;
       }
       else {
         line = testLine;
@@ -338,7 +339,7 @@
 
       if (style['text-wrap'].value == 'wrap') {
         var fontSize = style['font-size'].pxValue;
-        wrapText(context, text, textX, textY, style['text-max-width'].value, fontSize + 1);
+        wrapText(context, element, text, textX, textY, style['text-max-width'].value, fontSize + 1);
       } else {
         context.fillText(text, textX, textY);
       }
