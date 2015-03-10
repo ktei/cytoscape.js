@@ -49,7 +49,7 @@
       context.translate(rs.labelX, rs.labelY);
       context.rotate(theta);
 
-      this.drawText(context, edge, 0, 0); // make label offset from the edge a bit
+      this.drawText(context, edge, 0, 0);
 
       context.rotate(-theta);
       context.translate(-rs.labelX, -rs.labelY);
@@ -160,15 +160,7 @@
       cache.key = fontCacheKey;
     }
 
-    var text = String(style['content'].value);
-    var textTransform = style['text-transform'].value;
-    
-    if (textTransform == 'none') {
-    } else if (textTransform == 'uppercase') {
-      text = text.toUpperCase();
-    } else if (textTransform == 'lowercase') {
-      text = text.toLowerCase();
-    }
+    var text = this.getLabelText( element );
     
     // Calculate text draw position based on text alignment
     
@@ -200,71 +192,55 @@
     ctx.fill();
   }
 
-  function wrapText(context, ele, text, x, y, maxWidth, lineHeight) {
-    var words = text.split(' ');
-    var line = '';
-    ele.wrappedTextHeight = 0;
-    for(var n = 0; n < words.length; n++) {
-      var testLine = line + words[n] + ' ';
-      var metrics = context.measureText(testLine);
-      var testWidth = metrics.width;
-      testWidth = testWidth / ((lineHeight - 1) / 7);
-      if (testWidth > maxWidth && n > 0) {
-        context.fillText(line, x, y);
-        line = words[n] + ' ';
-        y += lineHeight;
-        ele.wrappedTextHeight += lineHeight;
-      }
-      else {
-        line = testLine;
-      }
-    }
-
-    context.fillText(line, x, y);
-  }
-
   // Draw text
   CanvasRenderer.prototype.drawText = function(context, element, textX, textY) {
     var style = element._private.style;
+    var rstyle = element._private.rstyle;
     var parentOpacity = element.effectiveOpacity();
     if( parentOpacity === 0 || style["text-opacity"].value === 0){ return; }
 
     var text = this.setupTextStyle( context, element );
+    var halign = style["text-halign"].value;
+    var valign = style["text-valign"].value;
 
     if ( text != null && !isNaN(textX) && !isNaN(textY)) {
       var backgroundOpacity = style["text-background-opacity"].value;
       if ((style["text-background-color"] && style["text-background-color"].value != "none" || style["text-border-width"].pxValue > 0) && backgroundOpacity > 0) {
         var textBorderWidth = style["text-border-width"].pxValue;
         var margin = 4 + textBorderWidth/2;
+        
         if (element.isNode()) {
           //Move textX, textY to include the background margins
-          if (style["text-valign"].value == "top") {
+          if (valign == "top") {
             textY -=margin;
-          } else if (style["text-valign"].value == "bottom") {
+          } else if (valign == "bottom") {
             textY +=margin;
           }
-          if (style["text-halign"].value == "left") {
+          if (halign == "left") {
             textX -=margin;
-          } else if (style["text-halign"].value == "right") {
+          } else if (halign == "right") {
             textX +=margin;
           }
         }
-        var bgWidth = context.measureText(text).width;
-        var bgHeight = style['font-size'].pxValue;
+
+        var bgWidth = rstyle.labelWidth;
+        var bgHeight = rstyle.labelHeight;
         var bgX = textX;
-        if (style["text-halign"]) {
-          if (style["text-halign"].value == "center") {
+
+        if (halign) {
+          if (halign == "center") {
             bgX = bgX - bgWidth / 2;
-          } else if (style["text-halign"].value == "left") {
+          } else if (halign == "left") {
             bgX = bgX- bgWidth;
           }
         }
   
         var bgY = textY;
+
         if (element.isNode()) {
-          if (style["text-valign"].value == "top") {
+          if (valign == "top") {
              bgY = bgY - bgHeight;
-          } else if (style["text-valign"].value == "center") {
+          } else if (valign == "center") {
             bgY = bgY- bgHeight / 2;
           }
         } else {
@@ -287,6 +263,7 @@
         if (style["text-background-color"]) {
           var textFill = context.fillStyle;
           var textBackgroundColor = style["text-background-color"].value;
+
           context.fillStyle = "rgba(" + textBackgroundColor[0] + "," + textBackgroundColor[1] + "," + textBackgroundColor[2] + "," + backgroundOpacity * parentOpacity + ")";
           roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
           context.fillStyle = textFill;
@@ -297,8 +274,10 @@
           var textLineWidth = context.lineWidth;
           var textBorderColor = style["text-border-color"].value;
           var textBorderStyle = style['text-border-style'].value;
+
           context.strokeStyle = "rgba(" + textBorderColor[0] + "," + textBorderColor[1] + "," + textBorderColor[2] + "," + backgroundOpacity * parentOpacity + ")";
           context.lineWidth = textBorderWidth;
+          
           if( context.setLineDash ){ // for very outofdate browsers
             switch( textBorderStyle ){
               case 'dotted':
@@ -319,6 +298,7 @@
           
           if( textBorderStyle === 'double' ){
             var whiteWidth = textBorderWidth/2;
+            
             context.strokeRect(bgX+whiteWidth,bgY+whiteWidth,bgWidth-whiteWidth*2,bgHeight-whiteWidth*2);
           }
           
@@ -331,18 +311,39 @@
         
       }
       
-      var lineWidth = 2  * style['text-outline-width'].value; // *2 b/c the stroke is drawn centred on the middle
+      var lineWidth = 2  * style['text-outline-width'].pxValue; // *2 b/c the stroke is drawn centred on the middle
+      
       if (lineWidth > 0) {
         context.lineWidth = lineWidth;
         context.strokeText(text, textX, textY);
       }
 
-      if (element.isNode() && style['text-wrap'].value == 'wrap') {
-        var fontSize = style['font-size'].pxValue;
-        wrapText(context, element, text, textX, textY, style['text-max-width'].value, fontSize + 1);
+      if( element.isNode() && style['text-wrap'].value === 'wrap' ){ //console.log('draw wrap');
+        var lines = text.split('\n');
+        var lineHeight = rstyle.labelHeight / lines.length;
+
+        //console.log('lines', lines);
+
+        if( valign === 'top' ){
+          for( var l = lines.length - 1; l >= 0; l-- ){
+            context.fillText( lines[l], textX, textY );
+
+            textY -= lineHeight;
+          }
+        } else {
+          for( var l = 0; l < lines.length; l++ ){
+            context.fillText( lines[l], textX, textY );
+
+            textY += lineHeight;
+          }
+        }
+
+        // var fontSize = style['font-size'].pxValue;
+        // wrapText(context, text, textX, textY, style['text-max-width'].pxValue, fontSize + 1);
       } else {
-        context.fillText(text, textX, textY);
+        context.fillText( text, textX, textY );
       }
+
 
       this.shadowStyle(context, 'transparent', 0); // reset for next guy
     }
