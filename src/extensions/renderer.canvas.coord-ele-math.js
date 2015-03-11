@@ -638,17 +638,18 @@
       //console.log('wrap'); 
       
       // save recalc if the label is the same as before
-      if( rscratch.labelWrapKey === rscratch.labelKey ){ 
+      if( rscratch.labelWrapKey === rscratch.labelKey && rscratch.textMaxWidth == style['text-max-width'].value ){ 
         // console.log('wrap cache hit');
         return rscratch.labelWrapCachedText;
       }
+
+      rscratch.textMaxWidth = style['text-max-width'].value;
       // console.log('wrap cache miss');
 
       var lines = text.split('\n');
       var maxW = style['text-max-width'].pxValue;
       var wrappedText;
       var wrappedLines = [];
-
       for( var l = 0; l < lines.length; l++ ){
         var line = lines[l];
         var lineDims = this.calculateLabelDimensions( ele, line, 'line=' + line );
@@ -657,20 +658,27 @@
         if( lineW > maxW ){ // line is too long
           var words = line.split(/\s+/); // NB: assume collapsed whitespace into single space
           var subline = '';
-
           for( var w = 0; w < words.length; w++ ){
             var word = words[w];
-            var testLine = subline.length === 0 ? word : subline + ' ' + word;
+            var testLine = subline + word + ' ';
             var testDims = this.calculateLabelDimensions( ele, testLine, 'testLine=' + testLine );
             var testW = testDims.width;
 
-            if( testW <= maxW ){ // word fits on current line
-              subline += word + ' ';
-            } else { // word starts new line
-              wrappedLines.push( subline );
-              subline = word + ' ';
+            if (testW > maxW && w > 0) {
+              wrappedLines.push(subline);
+              subline = words[w] + ' ';
+            } else {
+              subline = testLine;
             }
+
+            // if( testW <= maxW ){ // word fits on current line
+            //   subline += word + ' ';
+            // } else { // word starts new line
+            //   wrappedLines.push( subline );
+            //   subline = word + ' ';
+            // }
           }
+          wrappedLines.push(subline);
         } else { // line is already short enough
           wrappedLines.push( line );
         }
@@ -701,9 +709,14 @@
       cacheKey += '$@$' + extraKey;
     }
 
+    if (r.textMaxWidth != style['text-max-width'].value) {
+      r.labelDimCache = {};
+      r.textMaxWidth = style['text-max-width'].value;
+    }
+
     var cache = r.labelDimCache || (r.labelDimCache = {});
 
-    if( cache[cacheKey] ){
+    if( cache[cacheKey]){
       return cache[cacheKey];
     }
 
@@ -747,6 +760,7 @@
       height: div.clientHeight
     };
 
+    r.textMaxWidth = style['text-max-width'].value;
     return cache[cacheKey];
   };  
 
@@ -763,7 +777,8 @@
       var id = _p.data.id;
       var bbStyleSame = rs.boundingBoxKey != null && _p.boundingBoxKey === rs.boundingBoxKey;
       var labelStyleSame = rs.labelKey != null && _p.labelKey === rs.labelKey;
-      var styleSame = bbStyleSame && labelStyleSame;
+      var styleSame = bbStyleSame && labelStyleSame && ele.textMaxWidth == _p.style['text-max-width'].value;
+      ele.textMaxWidth = _p.style['text-max-width'].value;
 
       if( ele._private.group === 'nodes' ){
         var pos = _p.position;
