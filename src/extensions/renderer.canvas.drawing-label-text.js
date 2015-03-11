@@ -3,7 +3,7 @@
   var CanvasRenderer = $$('renderer', 'canvas');
 
   // Draw edge text
-  CanvasRenderer.prototype.drawEdgeText = function(context, edge) {
+  CanvasRenderer.prototype.drawEdgeText = function(context, edge, aggressive) {
     var text = edge._private.style['content'].strValue;
 
     if( !text || text.match(/^\s+$/) ){
@@ -24,7 +24,9 @@
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    // this.recalculateEdgeLabelProjection( edge );
+    if (aggressive === true) {
+      this.recalculateEdgeLabelProjection( edge );
+    }
     
     var rs = edge._private.rscratch;
     if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
@@ -273,7 +275,7 @@
 
         if (style['edge-text-rotation'].strValue === 'autorotate') {
           textY = 0;
-          bgWidth = 0;
+          bgWidth += 4;
           bgX = textX - bgWidth / 2;
           bgY = textY - bgHeight / 2;
         } else {
@@ -337,7 +339,7 @@
         context.strokeText(text, textX, textY);
       }
 
-      if (style['text-wrap'].value == 'wrap') {
+      if (element.isNode() && style['text-wrap'].value == 'wrap') {
         var fontSize = style['font-size'].pxValue;
         wrapText(context, element, text, textX, textY, style['text-max-width'].value, fontSize + 1);
       } else {
