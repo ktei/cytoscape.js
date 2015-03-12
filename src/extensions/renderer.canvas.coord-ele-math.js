@@ -658,31 +658,30 @@
         if( lineW > maxW ){ // line is too long
           var words = line.split(/\s+/); // NB: assume collapsed whitespace into single space
           var subline = '';
+
           for( var w = 0; w < words.length; w++ ){
             var word = words[w];
-            var testLine = subline + word + ' ';
+            var testLine = subline.length === 0 ? word : subline + ' ' + word;
             var testDims = this.calculateLabelDimensions( ele, testLine, 'testLine=' + testLine );
             var testW = testDims.width;
 
-            if (testW > maxW && w > 0) {
-              wrappedLines.push(subline);
-              subline = words[w] + ' ';
-            } else {
-              subline = testLine;
+            if( testW <= maxW ){ // word fits on current line
+              subline += word + ' ';
+            } else { // word starts new line
+              wrappedLines.push( subline );
+              subline = word + ' ';
             }
-
-            // if( testW <= maxW ){ // word fits on current line
-            //   subline += word + ' ';
-            // } else { // word starts new line
-            //   wrappedLines.push( subline );
-            //   subline = word + ' ';
-            // }
           }
-          wrappedLines.push(subline);
+
+          // if there's remaining text, put it in a wrapped line
+          if( !subline.match(/^\s+$/) ){
+            wrappedLines.push( subline );
+          }
         } else { // line is already short enough
           wrappedLines.push( line );
         }
       } // for
+
 
       rscratch.labelWrapCachedLines = wrappedLines;
       rscratch.labelWrapCachedText = text = wrappedLines.join('\n');
