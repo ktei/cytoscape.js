@@ -195,8 +195,8 @@
       return this; // chaining
     },
     
-    fit: function( elements, padding ){
-      var viewportState = this.getFitViewport( elements, padding );
+    fit: function( elements, padding, shift ){
+      var viewportState = this.getFitViewport( elements, padding, shift );
 
       if( viewportState ){
         var _p = this._private;
@@ -213,7 +213,7 @@
       return this; // chaining
     },
 
-    getFitViewport: function( elements, padding ){
+    getFitViewport: function( elements, padding, shift ){
       if( $$.is.number(elements) && padding === undefined ){ // elements is optional
         padding = elements;
         elements = undefined;
@@ -253,7 +253,12 @@
       padding = $$.is.number(padding) ? padding : 0;
 
       if( !isNaN(w) && !isNaN(h) && w > 0 && h > 0 && !isNaN(bb.w) && !isNaN(bb.h) &&  bb.w > 0 && bb.h > 0 ){
-        zoom = Math.min( (w - 2*padding)/bb.w, (h - 2*padding)/bb.h );
+        if (shift === true) {
+          zoom = Math.min( (w - 320 - 40)/bb.w, (h - 2*padding)/bb.h );  
+        } else {
+          zoom = Math.min( (w - 2*padding)/bb.w, (h - 2*padding)/bb.h );
+        }
+        
 
         // crop zoom
         zoom = zoom > this._private.maxZoom ? this._private.maxZoom : zoom;
