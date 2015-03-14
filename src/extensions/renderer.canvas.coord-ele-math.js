@@ -575,8 +575,10 @@
 
     var textX, textY;  
     var edgeCenterX, edgeCenterY;
-    var rs = edge._private.rscratch;
-    var rstyle = edge._private.rstyle;
+    var _p = edge._private;
+    var rs = _p.rscratch;
+    var style = _p.style;
+    var rstyle = _p.rstyle;
     
     if (rs.edgeType == 'self') {
       edgeCenterX = rs.selfEdgeMidX;
@@ -588,11 +590,14 @@
       edgeCenterX = $$.math.qbezierAt( rs.startX, rs.cp2x, rs.endX, 0.5 );
       edgeCenterY = $$.math.qbezierAt( rs.startY, rs.cp2y, rs.endY, 0.5 );
     } else if (rs.edgeType == 'haystack') {
-      var srcPos = edge._private.source._private.position;
-      var tgtPos = edge._private.target._private.position;
+      var src = _p.source;
+      var tgt = _p.target;
+      var srcPos = src._private.position;
+      var tgtPos = tgt._private.position;
+      var pts = rs.haystackPts;
 
-      edgeCenterX = (srcPos.x + rs.source.x + tgtPos.x + rs.target.x)/2;
-      edgeCenterY = (srcPos.y + rs.source.y + tgtPos.y + rs.target.y)/2;
+      edgeCenterX = ( pts[0] + pts[2] )/2;
+      edgeCenterY = ( pts[1] + pts[3] )/2;
     }
     
     textX = edgeCenterX;
@@ -638,18 +643,17 @@
       //console.log('wrap'); 
       
       // save recalc if the label is the same as before
-      if( rscratch.labelWrapKey === rscratch.labelKey && rscratch.textMaxWidth == style['text-max-width'].value ){ 
+      if( rscratch.labelWrapKey === rscratch.labelKey ){ 
         // console.log('wrap cache hit');
         return rscratch.labelWrapCachedText;
       }
-
-      rscratch.textMaxWidth = style['text-max-width'].value;
       // console.log('wrap cache miss');
 
       var lines = text.split('\n');
       var maxW = style['text-max-width'].pxValue;
       var wrappedText;
       var wrappedLines = [];
+
       for( var l = 0; l < lines.length; l++ ){
         var line = lines[l];
         var lineDims = this.calculateLabelDimensions( ele, line, 'line=' + line );
@@ -682,7 +686,6 @@
         }
       } // for
 
-
       rscratch.labelWrapCachedLines = wrappedLines;
       rscratch.labelWrapCachedText = text = wrappedLines.join('\n');
       rscratch.labelWrapKey = rscratch.labelKey;
@@ -708,14 +711,9 @@
       cacheKey += '$@$' + extraKey;
     }
 
-    if (r.textMaxWidth != style['text-max-width'].value) {
-      r.labelDimCache = {};
-      r.textMaxWidth = style['text-max-width'].value;
-    }
-
     var cache = r.labelDimCache || (r.labelDimCache = {});
 
-    if( cache[cacheKey]){
+    if( cache[cacheKey] ){
       return cache[cacheKey];
     }
 
@@ -759,7 +757,6 @@
       height: div.clientHeight
     };
 
-    r.textMaxWidth = style['text-max-width'].value;
     return cache[cacheKey];
   };  
 
@@ -776,8 +773,7 @@
       var id = _p.data.id;
       var bbStyleSame = rs.boundingBoxKey != null && _p.boundingBoxKey === rs.boundingBoxKey;
       var labelStyleSame = rs.labelKey != null && _p.labelKey === rs.labelKey;
-      var styleSame = bbStyleSame && labelStyleSame && ele.textMaxWidth == _p.style['text-max-width'].value;
-      ele.textMaxWidth = _p.style['text-max-width'].value;
+      var styleSame = bbStyleSame && labelStyleSame;
 
       if( ele._private.group === 'nodes' ){
         var pos = _p.position;
@@ -1254,7 +1250,9 @@
       
     for( var i = 0; i < haystackEdges.length; i++ ){
       var edge = haystackEdges[i];
-      var rscratch = edge._private.rscratch;
+      var _p = edge._private;
+      var rscratch = _p.rscratch;
+      var rs = rscratch;
 
       if( !rscratch.haystack ){
         var angle = Math.random() * 2 * Math.PI;
@@ -1270,7 +1268,26 @@
           x: Math.cos(angle),
           y: Math.sin(angle)
         };
-      }  
+
+      }
+
+      var src = _p.source;
+      var tgt = _p.target;
+      var srcPos = src._private.position;
+      var tgtPos = tgt._private.position;
+      var srcW = src._private.style['width'].pxValue;
+      var tgtW = tgt._private.style['width'].pxValue;
+      var srcH = src._private.style['height'].pxValue;
+      var tgtH = tgt._private.style['height'].pxValue;
+      var radius = style['haystack-radius'].value;
+      var halfRadius = radius/2; // b/c have to half width/height
+
+      rs.haystackPts = [
+        rs.source.x * srcW * halfRadius + srcPos.x,
+        rs.source.y * srcH * halfRadius + srcPos.y,
+        rs.target.x * tgtW * halfRadius + tgtPos.x,
+        rs.target.y * tgtH * halfRadius + tgtPos.y
+      ];
 
       // always override as haystack in case set to different type previously
       rscratch.edgeType = 'haystack';
