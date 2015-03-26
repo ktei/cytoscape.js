@@ -3,7 +3,7 @@
   var CanvasRenderer = $$('renderer', 'canvas');
 
   // Draw edge text
-  CanvasRenderer.prototype.drawEdgeText = function(context, edge, aggressive) {
+  CanvasRenderer.prototype.drawEdgeText = function(context, edge) {
     var text = edge._private.style['content'].strValue;
 
     if( !text || text.match(/^\s+$/) ){
@@ -24,9 +24,7 @@
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     
-    if (aggressive === true) {
-      this.recalculateEdgeLabelProjection( edge );
-    }
+    this.recalculateEdgeLabelProjection( edge );
     
     var rs = edge._private.rscratch;
     if( !$$.is.number( rs.labelX ) || !$$.is.number( rs.labelY ) ){ return; } // no pos => label can't be rendered
