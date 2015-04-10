@@ -253,8 +253,8 @@
       padding = $$.is.number(padding) ? padding : 0;
 
       if( !isNaN(w) && !isNaN(h) && w > 0 && h > 0 && !isNaN(bb.w) && !isNaN(bb.h) &&  bb.w > 0 && bb.h > 0 ){
-        if (shift === true) {
-          zoom = Math.min( (w - 320 - 40)/bb.w, (h - 2*padding)/bb.h );  
+        if (shift) {
+          zoom = Math.min( (w - shift.w - 2*padding)/bb.w, (h - shift.h - 2*padding)/bb.h );  
         } else {
           zoom = Math.min( (w - 2*padding)/bb.w, (h - 2*padding)/bb.h );
         }
