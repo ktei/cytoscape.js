@@ -81,4 +81,8 @@
     return this.bufferCanvasImage( options ).toDataURL('image/png');
   };
 
+  CanvasRenderer.prototype.jpg = function( options ){
+    return this.bufferCanvasImage( options ).toDataURL('image/jpeg');
+  };
+
 })( cytoscape );
