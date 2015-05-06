@@ -85,4 +85,21 @@
     return this.bufferCanvasImage( options ).toDataURL('image/jpeg');
   };
 
+  CanvasRenderer.prototype.getExportSize = function( options ) {
+      var data = this.data;
+      var cy = data.cy;
+      var bb = cy.elements().boundingBox();
+      var width = options.full ? Math.ceil(bb.w) : this.data.container.clientWidth;
+      var height = options.full ? Math.ceil(bb.h) : this.data.container.clientHeight;
+      var scale = 1;
+
+      if( options.scale !== undefined ){
+        width *= options.scale;
+        height *= options.scale;
+
+        scale = options.scale;
+      }
+      return { w: width, h: height };
+  };
+
 })( cytoscape );

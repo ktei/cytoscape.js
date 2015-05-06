@@ -14,6 +14,13 @@
       options = options || {};
 
       return renderer.jpg( options );     
+    },
+
+    getExportSize: function( options ) {
+      var renderer = this._private.renderer;
+      options = options || {};
+
+      return renderer.getExportSize( options );  
     }
     
   });
