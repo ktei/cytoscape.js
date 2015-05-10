@@ -242,7 +242,7 @@
     // instead of the developer's values so let's just make it explicit for the dev for now
     //
     // delaying the read of these val's is not an opt'n: that would delay init'l load time
-    var fontFamily = 'Helvetica' || this.containerPropertyAsString('font-family') || 'sans-serif';
+    var fontFamily = this.containerPropertyAsString('font-family') || 'sans-serif';
     var fontStyle = 'normal' || this.containerPropertyAsString('font-style') || 'normal';
     // var fontVariant = 'normal' || this.containerPropertyAsString('font-variant') || 'normal';
     var fontWeight = 'normal' || this.containerPropertyAsString('font-weight') || 'normal';
