@@ -1,9 +1,10 @@
 ;(function($$){ 'use strict';
 
   var CanvasRenderer = $$('renderer', 'canvas');
+  var CRp = CanvasRenderer.prototype;
 
   // Draw edge text
-  CanvasRenderer.prototype.drawEdgeText = function(context, edge) {
+  CRp.drawEdgeText = function(context, edge) {
     var text = edge._private.style['content'].strValue;
 
     if( !text || text.match(/^\s+$/) ){
@@ -18,9 +19,9 @@
     if( computedSize < minSize ){
       return;
     }
-  
+
     // Calculate text draw position
-    
+
     context.textAlign = 'center';
     context.textBaseline = 'middle';
 
@@ -30,7 +31,7 @@
     var style = edge._private.style;
     var autorotate = style['edge-text-rotation'].strValue === 'autorotate';
     var theta, dx, dy;
-    
+
     if( autorotate ){
       switch( rs.edgeType ){
         case 'haystack':
@@ -58,7 +59,7 @@
   };
 
   // Draw node text
-  CanvasRenderer.prototype.drawNodeText = function(context, node) {
+  CRp.drawNodeText = function(context, node) {
     var text = node._private.style['content'].strValue;
 
     if ( !text || text.match(/^\s+$/) ) {
@@ -71,7 +72,7 @@
     if( computedSize < minSize ){
       return;
     }
-      
+
     // this.recalculateNodeLabelProjection( node );
 
     var textHalign = node._private.style['text-halign'].strValue;
@@ -107,8 +108,8 @@
 
     this.drawText(context, node, rs.labelX, rs.labelY);
   };
-  
-  CanvasRenderer.prototype.getFontCache = function(context){
+
+  CRp.getFontCache = function(context){
     var cache;
 
     this.fontCaches = this.fontCaches || [];
@@ -131,7 +132,7 @@
 
   // set up canvas context with font
   // returns transformed text string
-  CanvasRenderer.prototype.setupTextStyle = function( context, element ){
+  CRp.setupTextStyle = function( context, element ){
     // Font style
     var parentOpacity = element.effectiveOpacity();
     var style = element._private.style;
@@ -159,16 +160,18 @@
     }
 
     var text = this.getLabelText( element );
-    
+
     // Calculate text draw position based on text alignment
-    
+
     // so text outlines aren't jagged
     context.lineJoin = 'round';
 
     this.fillStyle(context, color[0], color[1], color[2], opacity);
-    
+
     this.strokeStyle(context, outlineColor[0], outlineColor[1], outlineColor[2], outlineOpacity);
     
+    this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
+
     this.shadowStyle(context, shadowColor, shadowOpacity, shadowBlur, shadowOffsetX, shadowOffsetY);
 
     return text;
@@ -191,7 +194,7 @@
   }
 
   // Draw text
-  CanvasRenderer.prototype.drawText = function(context, element, textX, textY) {
+  CRp.drawText = function(context, element, textX, textY) {
     var _p = element._private;
     var style = _p.style;
     var rstyle = _p.rstyle;
@@ -203,12 +206,19 @@
     var halign = style["text-halign"].value;
     var valign = style["text-valign"].value;
 
+
+    if( element.isEdge() ){
+      halign = 'center';
+      valign = 'center';
+    }
+
+
     if ( text != null && !isNaN(textX) && !isNaN(textY)) {
       var backgroundOpacity = style["text-background-opacity"].value;
       if ((style["text-background-color"] && style["text-background-color"].value != "none" || style["text-border-width"].pxValue > 0) && backgroundOpacity > 0) {
         var textBorderWidth = style["text-border-width"].pxValue;
         var margin = 4 + textBorderWidth/2;
-        
+
         if (element.isNode()) {
           //Move textX, textY to include the background margins
           if (valign == "top") {
@@ -234,7 +244,7 @@
             bgX = bgX- bgWidth;
           }
         }
-  
+
         var bgY = textY;
 
         if (element.isNode()) {
@@ -259,16 +269,22 @@
           bgHeight += margin*2;
           bgWidth += margin*2;
         }
-        
+
         if (style["text-background-color"]) {
           var textFill = context.fillStyle;
           var textBackgroundColor = style["text-background-color"].value;
 
           context.fillStyle = "rgba(" + textBackgroundColor[0] + "," + textBackgroundColor[1] + "," + textBackgroundColor[2] + "," + backgroundOpacity * parentOpacity + ")";
-          roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
+
+          var styleShape = style['text-background-shape'].strValue;
+          if (styleShape == "roundrectangle") {
+            roundRect(context, bgX, bgY, bgWidth, bgHeight, 1);
+          } else {
+            context.fillRect(bgX,bgY,bgWidth,bgHeight);
+          }
           context.fillStyle = textFill;
         }
-        
+
         if (textBorderWidth > 0) {
           var textStroke = context.strokeStyle;
           var textLineWidth = context.lineWidth;
@@ -277,7 +293,7 @@
 
           context.strokeStyle = "rgba(" + textBorderColor[0] + "," + textBorderColor[1] + "," + textBorderColor[2] + "," + backgroundOpacity * parentOpacity + ")";
           context.lineWidth = textBorderWidth;
-          
+
           if( context.setLineDash ){ // for very outofdate browsers
             switch( textBorderStyle ){
               case 'dotted':
@@ -288,34 +304,35 @@
                 break;
               case 'double':
                 context.lineWidth = textBorderWidth/4; // 50% reserved for white between the two borders
+                context.setLineDash([ ]);
+                break;
+
               case 'solid':
                 context.setLineDash([ ]);
                 break;
             }
           }
-          
+
           context.strokeRect(bgX,bgY,bgWidth,bgHeight);
-          
+
           if( textBorderStyle === 'double' ){
             var whiteWidth = textBorderWidth/2;
-            
+
             context.strokeRect(bgX+whiteWidth,bgY+whiteWidth,bgWidth-whiteWidth*2,bgHeight-whiteWidth*2);
           }
-          
+
           if( context.setLineDash ){ // for very outofdate browsers
             context.setLineDash([ ]);
           }
           context.lineWidth = textLineWidth;
           context.strokeStyle = textStroke;
         }
-        
       }
-      
+
       var lineWidth = 2  * style['text-outline-width'].pxValue; // *2 b/c the stroke is drawn centred on the middle
-      
-      if (lineWidth > 0) {
+
+      if( lineWidth > 0 ){
         context.lineWidth = lineWidth;
-        context.strokeText(text, textX, textY);
       }
 
       if( element.isNode() && style['text-wrap'].value === 'wrap' ){ //console.log('draw wrap');
@@ -324,23 +341,38 @@
 
         //console.log('lines', lines);
 
-        if( valign === 'top' ){
-          for( var l = lines.length - 1; l >= 0; l-- ){
-            context.fillText( lines[l], textX, textY );
+        switch( valign ){
+          case 'top':
+            textY -= (lines.length - 1) * lineHeight;
+            break;
 
-            textY -= lineHeight;
-          }
-        } else {
-          for( var l = 0; l < lines.length; l++ ){
-            context.fillText( lines[l], textX, textY );
+          case 'bottom':
+            // nothing required
+            break;
 
-            textY += lineHeight;
+          default:
+          case 'center':
+            textY -= (lines.length - 1) * lineHeight / 2;
+        }
+
+        for( var l = 0; l < lines.length; l++ ){
+          if( lineWidth > 0 ){
+            context.strokeText( lines[l], textX, textY );
           }
+
+          context.fillText( lines[l], textX, textY );
+
+          textY += lineHeight;
+
         }
 
         // var fontSize = style['font-size'].pxValue;
         // wrapText(context, text, textX, textY, style['text-max-width'].pxValue, fontSize + 1);
       } else {
+        if( lineWidth > 0 ){
+          context.strokeText( text, textX, textY );
+        }
+
         context.fillText( text, textX, textY );
       }
 
@@ -349,5 +381,4 @@
     }
   };
 
-  
 })( cytoscape );
