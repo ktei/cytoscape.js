@@ -278,7 +278,7 @@
 
           var styleShape = style['text-background-shape'].strValue;
           if (styleShape == "roundrectangle") {
-            roundRect(context, bgX, bgY, bgWidth, bgHeight, 1);
+            roundRect(context, bgX, bgY, bgWidth, bgHeight, 2);
           } else {
             context.fillRect(bgX,bgY,bgWidth,bgHeight);
           }
