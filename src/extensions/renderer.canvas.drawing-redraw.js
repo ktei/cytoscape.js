@@ -593,6 +593,7 @@
       cy.trigger('initrender');
     }
     
+    cy.trigger('frame');
   };
 
 })( cytoscape );
