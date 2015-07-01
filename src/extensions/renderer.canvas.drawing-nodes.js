@@ -121,6 +121,9 @@
           r.data.canvasNeedsRedraw[CanvasRenderer.DRAG] = true;
           
           r.redraw();
+          if (window.cyImageLoaded) {
+            window.cyImageLoaded();
+          }
         });
         
         if( image.complete ){
