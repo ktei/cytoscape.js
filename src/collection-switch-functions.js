@@ -1,31 +1,33 @@
 ;(function($$){ 'use strict';
-  
+
   // Collection functions that toggle a boolean value
   ////////////////////////////////////////////////////////////////////////////////////////////////////
-  
-  
+
+
   function defineSwitchFunction(params){
     return function(){
       var args = arguments;
-      
+      var changedEles = [];
+
       // e.g. cy.nodes().select( data, handler )
       if( args.length === 2 ){
         var data = args[0];
         var handler = args[1];
         this.bind( params.event, data, handler );
-      } 
-      
+      }
+
       // e.g. cy.nodes().select( handler )
       else if( args.length === 1 ){
         var handler = args[0];
         this.bind( params.event, handler );
       }
-      
+
       // e.g. cy.nodes().select()
       else if( args.length === 0 ){
         for( var i = 0; i < this.length; i++ ){
           var ele = this[i];
           var able = !params.ableField || ele._private[params.ableField];
+          var changed = ele._private[params.field] != params.value;
 
           if( params.overrideAble ){
             var overrideAble = params.overrideAble(ele);
@@ -39,16 +41,22 @@
 
           if( able ){
             ele._private[params.field] = params.value;
+
+            if( changed ){
+              changedEles.push( ele );
+            }
           }
         }
-        this.updateStyle(); // change of state => possible change of style
-        this.trigger( params.event );
+
+        var changedColl = $$.Collection( this.cy(), changedEles );
+        changedColl.updateStyle(); // change of state => possible change of style
+        changedColl.trigger( params.event );
       }
 
       return this;
     };
   }
-  
+
   function defineSwitchSet( params ){
     $$.elesfn[ params.field ] = function(){
       var ele = this[0];
@@ -65,7 +73,7 @@
         return ele._private[ params.field ];
       }
     };
-    
+
     $$.elesfn[ params.on ] = defineSwitchFunction({
       event: params.on,
       field: params.field,
@@ -82,7 +90,7 @@
       value: false
     });
   }
-  
+
   defineSwitchSet({
     field: 'locked',
     overrideField: function(ele){
@@ -91,7 +99,7 @@
     on: 'lock',
     off: 'unlock'
   });
-  
+
   defineSwitchSet({
     field: 'grabbable',
     overrideField: function(ele){
@@ -100,7 +108,7 @@
     on: 'grabify',
     off: 'ungrabify'
   });
-  
+
   defineSwitchSet({
     field: 'selected',
     ableField: 'selectable',
@@ -110,7 +118,7 @@
     on: 'select',
     off: 'unselect'
   });
-  
+
   defineSwitchSet({
     field: 'selectable',
     overrideField: function(ele){
@@ -119,7 +127,9 @@
     on: 'selectify',
     off: 'unselectify'
   });
-  
+
+  $$.elesfn.deselect = $$.elesfn.unselect;
+
   $$.elesfn.grabbed = function(){
     var ele = this[0];
     if( ele ){
@@ -139,5 +149,5 @@
       return !ele._private.active;
     }
   };
-  
+
 })( cytoscape );
