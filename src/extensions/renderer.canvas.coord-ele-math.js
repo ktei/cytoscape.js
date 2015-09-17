@@ -560,7 +560,7 @@
         break;
 
       case 'bottom':
-        textY = nodePos.y + nodeHeight / 2;
+        textY = nodePos.y + nodeHeight / 2 - 5; // reveal reduce the space between node and label
         break;
 
       default: // e.g. middle

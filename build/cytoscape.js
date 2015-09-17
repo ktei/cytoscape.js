@@ -1,5 +1,5 @@
 /*!
- * This file is part of Cytoscape.js snapshot-1d93d6e83d-1442375972717.
+ * This file is part of Cytoscape.js snapshot-f82b0be013-1442470273353.
  *
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -28,7 +28,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = 'snapshot-1d93d6e83d-1442375972717';
+  $$.version = 'snapshot-f82b0be013-1442470273353';
 
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -16685,7 +16685,7 @@ this.cytoscape = cytoscape;
         break;
 
       case 'bottom':
-        textY = nodePos.y + nodeHeight / 2;
+        textY = nodePos.y + nodeHeight / 2 - 5;
         break;
 
       default: // e.g. middle
