@@ -634,10 +634,7 @@
               ly1 = labelY - lh/2;
               ly2 = labelY + lh/2;
             } else {
-              if (style['text-wrap'].value == 'wrap' && ele.wrappedTextHeight > 0) {
-                lh = ele.wrappedTextHeight * cy.zoom();
-              }
-              lh += 2 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
+              lh += 6 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
               switch( halign.value ){
                 case 'left':
                   lx1 = labelX - lw;
