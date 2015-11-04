@@ -1,5 +1,5 @@
 /*!
- * This file is part of Cytoscape.js snapshot-c09e585373-1443144843919.
+ * This file is part of Cytoscape.js snapshot-9799b3686f-1446504830399.
  *
  * Cytoscape.js is free software: you can redistribute it and/or modify it
  * under the terms of the GNU Lesser General Public License as published by the Free
@@ -28,7 +28,7 @@ var cytoscape;
     return cytoscape.init.apply(cytoscape, arguments);
   };
 
-  $$.version = 'snapshot-c09e585373-1443144843919';
+  $$.version = 'snapshot-9799b3686f-1446504830399';
 
   // allow functional access to cytoscape.js
   // e.g. var cyto = $.cytoscape({ selector: "#foo", ... });
@@ -13279,10 +13279,7 @@ this.cytoscape = cytoscape;
               ly1 = labelY - lh/2;
               ly2 = labelY + lh/2;
             } else {
-              if (style['text-wrap'].value == 'wrap' && ele.wrappedTextHeight > 0) {
-                lh = ele.wrappedTextHeight * cy.zoom();
-              }
-              lh += 2 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
+              lh += 6 * cy.zoom(); // we need 2 extra px to hold space for the lower parts of characters such as y, g, etc.
               switch( halign.value ){
                 case 'left':
                   lx1 = labelX - lw;
